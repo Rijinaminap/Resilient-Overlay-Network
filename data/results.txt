@@ -1,0 +1,5 @@
+Network performance metrics logged here...
+
+Latency: <value>
+Packet Loss: <value>
+Recovery Time: <value>
