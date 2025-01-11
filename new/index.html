@@ -3,33 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Overlay Network Visualization</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        #network-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        #controls {
-            margin: 20px 0;
-        }
-        #result {
-            margin-top: 10px;
-            font-weight: bold;
-        }
-        canvas {
-            border: 1px solid #ccc;
-        }
-    </style>
+    <title>Dynamic Overlay Network</title>
+    <link rel="stylesheet" href="src/styles.css">
 </head>
 <body>
-    <h1>Overlay Network Visualization</h1>
+    <h1>Dynamic Overlay Network</h1>
     <div id="network-container">
-        <canvas id="network" width="500" height="500"></canvas>
+        <canvas id="network" width="600" height="600"></canvas>
         <div id="controls">
             <label for="fail-node">Fail Node:</label>
             <input type="number" id="fail-node" min="1">
@@ -41,113 +21,12 @@
             <input type="number" id="target" min="1">
             <button onclick="findPath()">Find Path</button>
         </div>
-        <div id="result"></div>
+        <div id="network-metrics">
+            <h3>Network Metrics</h3>
+            <p>Packet Loss: <span id="packet-loss">0%</span></p>
+            <p>Jitter: <span id="jitter">0ms</span></p>
+        </div>        
     </div>
-
-    <script>
-        const canvas = document.getElementById('network');
-        const ctx = canvas.getContext('2d');
-        let networkData = { nodes: [], edges: [], status: {} };
-        let positions = {}; // Store node positions
-
-        // Fetch the network data from the backend
-        async function fetchNetwork() {
-            const response = await fetch('http://127.0.0.1:5000/get_network');
-            networkData = await response.json();
-            calculatePositions();
-            drawNetwork();
-        }
-
-        // Calculate positions for nodes
-        function calculatePositions() {
-            const { nodes } = networkData;
-            const radius = 200; // Radius of the circular layout
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-
-            nodes.forEach((node, index) => {
-                const angle = (2 * Math.PI * index) / nodes.length;
-                positions[node] = {
-                    x: centerX + radius * Math.cos(angle),
-                    y: centerY + radius * Math.sin(angle),
-                };
-            });
-        }
-
-        // Draw the network topology
-        function drawNetwork() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const { nodes, edges, status } = networkData;
-
-    // Random positions for each node
-    const positions = {};
-    nodes.forEach((node, index) => {
-        positions[node] = {
-            x: 50 + Math.random() * 400, // Spread nodes randomly inside the canvas
-            y: 50 + Math.random() * 400
-        };
-    });
-
-    // Draw edges
-    edges.forEach(edge => {
-        const source = positions[edge.source];
-        const target = positions[edge.target];
-        ctx.beginPath();
-        ctx.moveTo(source.x, source.y);
-        ctx.lineTo(target.x, target.y);
-        ctx.strokeStyle = 'black';
-        ctx.stroke();
-    });
-
-    // Draw nodes
-    nodes.forEach(node => {
-        const pos = positions[node];
-        const color = status[node] ? 'green' : 'red'; // Green = Active, Red = Failed
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(pos.x, pos.y, 10, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        // Label nodes
-        ctx.fillStyle = 'black';
-        ctx.fillText(node, pos.x - 5, pos.y - 15);
-    });
-}
-
-
-        // Handle node failure
-        async function failNode() {
-            const node = document.getElementById('fail-node').value;
-            const response = await fetch('http://127.0.0.1:5000/fail_node', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ node: parseInt(node) })
-            });
-            const result = await response.json();
-            document.getElementById('result').innerText = result.message;
-            await fetchNetwork(); // Refresh the visualization
-        }
-
-        // Find path between two nodes
-        async function findPath() {
-            const source = document.getElementById('source').value;
-            const target = document.getElementById('target').value;
-            const response = await fetch('http://127.0.0.1:5000/reroute', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ source: parseInt(source), target: parseInt(target) })
-            });
-            const result = await response.json();
-
-            if (result.status === 'success') {
-                document.getElementById('result').innerText = `Path: ${result.path.join(' -> ')}`;
-            } else {
-                document.getElementById('result').innerText = result.message;
-            }
-        }
-
-        fetchNetwork();
-    </script>
+    <script src="src/scripts.js"></script>
 </body>
 </html>
